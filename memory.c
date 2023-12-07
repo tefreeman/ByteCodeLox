@@ -3,21 +3,12 @@
 #include "memory.h"
 #include "vm.h"
 
-#ifdef DEBUG_LOG_GC
-#include <stdio.h>
-#include "debug.h"
-#endif
-
 #define GC_HEAP_GROW_FACTOR 2
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
   vm.bytesAllocated += newSize - oldSize;
   if (newSize > oldSize) {
-#ifdef DEBUG_STRESS_GC
-    collectGarbage();
-#endif
-
-    if (vm.bytesAllocated > vm.nextGC) {
+    if (vm.bytesAllocated > vm.gcThreshold) {
       collectGarbage();
     }
   }
@@ -34,12 +25,6 @@ void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 void markObject(Obj* object) {
   if (object == NULL) return;
   if (object->isMarked) return;
-
-#ifdef DEBUG_LOG_GC
-  printf("%p mark ", (void*)object);
-  printValue(OBJ_VAL(object));
-  printf("\n");
-#endif
 
   object->isMarked = true;
 
@@ -62,11 +47,6 @@ static void markArray(ValueArray* array) {
   }
 }
 static void blackenObject(Obj* object) {
-#ifdef DEBUG_LOG_GC
-  printf("%p blacken ", (void*)object);
-  printValue(OBJ_VAL(object));
-  printf("\n");
-#endif
 
   switch (object->type) {
   case OBJ_BOUND_METHOD: {
@@ -82,10 +62,10 @@ static void blackenObject(Obj* object) {
     break;
   }
   case OBJ_CLOSURE: {
-    ObjClosure* closure = (ObjClosure*)object;
-    markObject((Obj*)closure->function);
-    for (int i = 0; i < closure->upvalueCount; i++) {
-      markObject((Obj*)closure->upvalues[i]);
+    ObjClosure* currentClosure = (ObjClosure*)object;
+    markObject((Obj*)currentClosure->function);
+    for (int i = 0; i < currentClosure->upvalueCount; i++) {
+      markObject((Obj*)currentClosure->upvalues[i]);
     }
     break;
   }
@@ -110,9 +90,6 @@ static void blackenObject(Obj* object) {
   }
 }
 static void freeObject(Obj* object) {
-#ifdef DEBUG_LOG_GC
-  printf("%p free type %d\n", (void*)object, object->type);
-#endif
 
   switch (object->type) {
   case OBJ_BOUND_METHOD:
@@ -120,19 +97,19 @@ static void freeObject(Obj* object) {
     break;
   case OBJ_FUNCTION: {
     ObjFunction* function = (ObjFunction*)object;
-    freeChunk(&function->chunk);
+    deallocateChunk(&function->chunk);
     FREE(ObjFunction, object);
     break;
   }
   case OBJ_CLASS: {
     ObjClass* klass = (ObjClass*)object;
-    freeTable(&klass->methods);
+    deallocateTable(&klass->methods);
     FREE(ObjClass, object);
     break;
   }   case OBJ_CLOSURE: {
-    ObjClosure* closure = (ObjClosure*)object;
-    FREE_ARRAY(ObjUpvalue*, closure->upvalues,
-      closure->upvalueCount);
+    ObjClosure* currentClosure = (ObjClosure*)object;
+    FREE_ARRAY(ObjUpvalue*, currentClosure->upvalues,
+      currentClosure->upvalueCount);
     FREE(ObjClosure, object);
     break;
   }
@@ -142,7 +119,7 @@ static void freeObject(Obj* object) {
 
   case OBJ_INSTANCE: {
     ObjInstance* instance = (ObjInstance*)object;
-    freeTable(&instance->fields);
+    deallocateTable(&instance->fields);
     FREE(ObjInstance, object);
     break;
   }
@@ -163,7 +140,7 @@ static void markRoots() {
   }
 
   for (int i = 0; i < vm.frameCount; i++) {
-    markObject((Obj*)vm.frames[i].closure);
+    markObject((Obj*)vm.frames[i].currentClosure);
   }
 
   for (ObjUpvalue* upvalue = vm.openUpvalues;
@@ -172,7 +149,7 @@ static void markRoots() {
     markObject((Obj*)upvalue);
   }
 
-  markTable(&vm.globals);
+  markTable(&vm.globalsVars);
   markCompilerRoots();
   markObject((Obj*)vm.initString);
 }
@@ -205,25 +182,13 @@ static void sweep() {
   }
 }
 void collectGarbage() {
-
-#ifdef DEBUG_LOG_GC
-  printf("-- gc begin\n");
-  size_t before = vm.bytesAllocated;
-#endif
-
   markRoots();
   traceReferences();
   tableRemoveWhite(&vm.strings);
   sweep();
 
-  vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
+  vm.gcThreshold = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
 
-#ifdef DEBUG_LOG_GC
-  printf("-- gc end\n");
-  printf("   collected %zu bytes (from %zu to %zu) next at %zu\n",
-    before - vm.bytesAllocated, before, vm.bytesAllocated,
-    vm.nextGC);
-#endif
 }
 void freeObjects() {
   Obj* object = vm.objects;

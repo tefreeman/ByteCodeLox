@@ -3,6 +3,7 @@
 #include "common.h"
 #include "value.h"
 
+// OpCode is an enum of all the possible opcodes that can be used in the
 typedef enum {
   OP_TRUE,
   OP_FALSE,
@@ -51,8 +52,8 @@ typedef struct {
   ValueArray constants;
 } Chunk;
 
-void initChunk(Chunk* chunk);
+void initalizeChunk(Chunk* chunk);
 void writeChunk(Chunk* chunk, uint8_t byte, int line);
-void freeChunk(Chunk* chunk);
+void deallocateChunk(Chunk* chunk);
 int addConstant(Chunk* chunk, Value value);
 

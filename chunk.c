@@ -2,18 +2,18 @@
 #include "memory.h"
 #include "vm.h"
 
-void initChunk(Chunk* chunk) {
+void initalizeChunk(Chunk* chunk) {
   chunk->count = 0;
   chunk->capacity = 0;
   chunk->code = NULL;
   chunk->lines = NULL;
   initValueArray(&chunk->constants);
 }
-void freeChunk(Chunk* chunk) {
+void deallocateChunk(Chunk* chunk) {
   FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
   FREE_ARRAY(int, chunk->lines, chunk->capacity);
-  freeValueArray(&chunk->constants);
-  initChunk(chunk);
+  deallocateValueArray(&chunk->constants);
+  initalizeChunk(chunk);
 }
 
 void writeChunk(Chunk* chunk, uint8_t byte, int line) {

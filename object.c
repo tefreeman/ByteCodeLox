@@ -17,11 +17,6 @@ static Obj* allocateObject(size_t size, ObjType type) {
 
   object->next = vm.objects;
   vm.objects = object;
-
-#ifdef DEBUG_LOG_GC
-  printf("%p allocate %zu for %d\n", (void*)object, size, type);
-#endif
-
   return object;
 }
 ObjBoundMethod* newBoundMethod(Value receiver,
@@ -34,7 +29,7 @@ ObjBoundMethod* newBoundMethod(Value receiver,
 }
 ObjClass* newClass(ObjString* name) {
   ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
-  klass->name = name;     initTable(&klass->methods);
+  klass->name = name;     initializeTable(&klass->methods);
   return klass;
 }
 ObjClosure* newClosure(ObjFunction* function) {
@@ -44,18 +39,18 @@ ObjClosure* newClosure(ObjFunction* function) {
     upvalues[i] = NULL;
   }
 
-  ObjClosure* closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
-  closure->function = function;
-  closure->upvalues = upvalues;
-  closure->upvalueCount = function->upvalueCount;
-  return closure;
+  ObjClosure* currentClosure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
+  currentClosure->function = function;
+  currentClosure->upvalues = upvalues;
+  currentClosure->upvalueCount = function->upvalueCount;
+  return currentClosure;
 }
 ObjFunction* newFunction() {
   ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
   function->arity = 0;
   function->upvalueCount = 0;
   function->name = NULL;
-  initChunk(&function->chunk);
+  initalizeChunk(&function->chunk);
   return function;
 }
 ObjNative* newNative(NativeFn function) {
@@ -66,7 +61,7 @@ ObjNative* newNative(NativeFn function) {
 ObjInstance* newInstance(ObjClass* klass) {
   ObjInstance* instance = ALLOCATE_OBJ(ObjInstance, OBJ_INSTANCE);
   instance->klass = klass;
-  initTable(&instance->fields);
+  initializeTable(&instance->fields);
   return instance;
 }
 static ObjString* allocateString(char* chars, int length,
@@ -77,7 +72,7 @@ static ObjString* allocateString(char* chars, int length,
   string->hash = hash;
 
   push(OBJ_VAL(string));
-  tableSet(&vm.strings, string, NIL_VAL);
+  getValueFromTable(&vm.strings, string, NIL_VAL);
   pop();
 
   return string;
@@ -93,7 +88,7 @@ static uint32_t hashStr(const char* key, int length) {
 
 ObjString* getStr(char* chars, int length) {
   uint32_t hash = hashStr(chars, length);
-  ObjString* interned = tableFindString(&vm.strings, chars, length,
+  ObjString* interned = findStringInTable(&vm.strings, chars, length,
     hash);
   if (interned != NULL) {
     FREE_ARRAY(char, chars, length + 1);
@@ -105,7 +100,7 @@ ObjString* getStr(char* chars, int length) {
 
 ObjString* cpyStr(const char* chars, int length) {
   uint32_t hash = hashStr(chars, length);
-  ObjString* interned = tableFindString(&vm.strings, chars, length,
+  ObjString* interned = findStringInTable(&vm.strings, chars, length,
     hash);
   if (interned != NULL) return interned;
 

@@ -8,15 +8,17 @@
 
 #define TABLE_MAX_LOAD 0.75
 
-void initTable(Table* table) {
+void initializeTable(Table* table) {
   table->count = 0;
   table->capacity = 0;
   table->entries = NULL;
 }
-void freeTable(Table* table) {
+void deallocateTable(Table* table) {
   FREE_ARRAY(Entry, table->entries, table->capacity);
-  initTable(table);
+  initializeTable(table);
 }
+
+//Finds an entry in a hash table for a given key.
 static Entry* findEntry(Entry* entries, int capacity,
   ObjString* key) {
 
@@ -26,10 +28,12 @@ static Entry* findEntry(Entry* entries, int capacity,
   for (;;) {
     Entry* entry = &entries[index];
     if (entry->key == NULL) {
+      // If the entry's value is NIL, it's either a free slot or a tombstone.
       if (IS_NIL(entry->value)) {
         return tombstone != NULL ? tombstone : entry;
       }
       else {
+        // First tombstone encountered in the search.
         if (tombstone == NULL) tombstone = entry;
       }
     }
@@ -37,11 +41,11 @@ static Entry* findEntry(Entry* entries, int capacity,
       return entry;
     }
 
-
+    // Move to the next index, may wrao around the table.
     index = (index + 1) & (capacity - 1);
   }
 }
-bool tableGet(Table* table, ObjString* key, Value* value) {
+bool findTableEntry(Table* table, ObjString* key, Value* value) {
   if (table->count == 0) return false;
 
   Entry* entry = findEntry(table->entries, table->capacity, key);
@@ -72,7 +76,7 @@ static void adjustCapacity(Table* table, int capacity) {
   table->entries = entries;
   table->capacity = capacity;
 }
-bool tableSet(Table* table, ObjString* key, Value value) {
+bool getValueFromTable(Table* table, ObjString* key, Value value) {
   if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
     int capacity = GROW_CAPACITY(table->capacity);
     adjustCapacity(table, capacity);
@@ -101,11 +105,11 @@ void tableAddAll(Table* from, Table* to) {
   for (int i = 0; i < from->capacity; i++) {
     Entry* entry = &from->entries[i];
     if (entry->key != NULL) {
-      tableSet(to, entry->key, entry->value);
+      getValueFromTable(to, entry->key, entry->value);
     }
   }
 }
-ObjString* tableFindString(Table* table, const char* chars,
+ObjString* findStringInTable(Table* table, const char* chars,
   int length, uint32_t hash) {
   if (table->count == 0) return NULL;
 

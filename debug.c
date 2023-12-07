@@ -131,6 +131,11 @@ int disassembleInstruction(Chunk* chunk, int offset) {
   case OP_METHOD:
     return constantInstruction("OP_METHOD", chunk, offset);
   case OP_CLOSURE: {
+
+    /* Handle the closure operation in bytecode.
+      This involves reading the constant index, printing it, and then
+      iterating over each upvalue associated with the closure. 
+    */
     offset++;
     uint8_t constant = chunk->code[offset++];
     printf("%-16s %4d ", "OP_CLOSURE", constant);
@@ -149,6 +154,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     return offset;
   }
   default:
+    // Error if hit unknown opcode
     printf("Unknown opcode %d\n", instruction);
     return offset + 1;
   }
