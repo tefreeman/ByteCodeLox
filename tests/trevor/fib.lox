@@ -1,0 +1,28 @@
+
+fun fib(n)
+{
+     var a = 0;
+     var b = 1;
+     var  c;
+     var i;
+
+    if( n == 0)
+        return a;
+    for(i = 2; i <= n; i = i + 1)
+    {
+    c = a + b;
+    a = b;
+    b = c;
+    }
+    return b;
+}
+ 
+
+// fibonachi table =  https://r-knott.surrey.ac.uk/Fibonacci/fibtable.html 
+// 0 = 0, 7=13, 15=610, 72=498454011879264 80=23416728348467685
+
+print fib(0); // expect: 0
+print fib(7); // expect: 13
+print fib(15); // expect: 610
+print fib(72); // expect: 498454011879264
+print fib(80); // expect: 23416728348467685
