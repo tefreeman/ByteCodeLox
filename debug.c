@@ -152,6 +152,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
     }
 
     return offset;
+
   }
   default:
     // Error if hit unknown opcode

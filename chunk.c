@@ -2,6 +2,7 @@
 #include "memory.h"
 #include "vm.h"
 
+
 void initalizeChunk(Chunk* chunk) {
   chunk->count = 0;
   chunk->capacity = 0;

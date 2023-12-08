@@ -19,6 +19,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
   vm.objects = object;
   return object;
 }
+
 ObjBoundMethod* newBoundMethod(Value receiver,
   ObjClosure* method) {
   ObjBoundMethod* bound = ALLOCATE_OBJ(ObjBoundMethod,

@@ -21,6 +21,7 @@ static bool isAlpha(char c) {
     (c >= 'A' && c <= 'Z') ||
     c == '_';
 }
+
 static bool isDigit(char c) {
   return c >= '0' && c <= '9';
 }

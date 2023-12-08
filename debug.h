@@ -6,5 +6,3 @@ int disassembleInstruction(Chunk* chunk, int offset);
 
 // disassembleChunk() returns nothing
 void disassembleChunk(Chunk* chunk, char* name);
-
-

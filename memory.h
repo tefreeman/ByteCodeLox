@@ -18,6 +18,7 @@
     reallocate(pointer, sizeof(type) * (oldCount), 0)
 
 
+
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
 
 // Mark a value as reachable for garbage collection (GC)

@@ -6,6 +6,7 @@
 #define FRAMES_MAX_SIZE 64
 #define STACK_MAX_SIZE (FRAMES_MAX_SIZE * UINT8_COUNT)
 
+
 typedef struct {
   ObjClosure* currentClosure;
   uint8_t* instructionPointer;

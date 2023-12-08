@@ -3,6 +3,7 @@
 #include "common.h"
 #include "value.h"
 
+
 // OpCode is an enum of all the possible opcodes that can be used in the
 typedef enum {
   OP_TRUE,
